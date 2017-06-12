@@ -31,6 +31,9 @@
             System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea1 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
             System.Windows.Forms.DataVisualization.Charting.Legend legend1 = new System.Windows.Forms.DataVisualization.Charting.Legend();
             System.Windows.Forms.DataVisualization.Charting.Series series1 = new System.Windows.Forms.DataVisualization.Charting.Series();
+            System.Windows.Forms.DataVisualization.Charting.ChartArea chartArea2 = new System.Windows.Forms.DataVisualization.Charting.ChartArea();
+            System.Windows.Forms.DataVisualization.Charting.Legend legend2 = new System.Windows.Forms.DataVisualization.Charting.Legend();
+            System.Windows.Forms.DataVisualization.Charting.Series series2 = new System.Windows.Forms.DataVisualization.Charting.Series();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form));
             this.Chart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             this.ButStart = new System.Windows.Forms.Button();
@@ -38,7 +41,9 @@
             this.ListSign = new System.Windows.Forms.CheckedListBox();
             this.testRB = new System.Windows.Forms.RadioButton();
             this.controllRB = new System.Windows.Forms.RadioButton();
+            this.ForChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
             ((System.ComponentModel.ISupportInitialize)(this.Chart)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ForChart)).BeginInit();
             this.SuspendLayout();
             // 
             // Chart
@@ -111,12 +116,11 @@
             // testRB
             // 
             this.testRB.AutoSize = true;
-            this.testRB.Checked = true;
+            this.testRB.Enabled = false;
             this.testRB.Location = new System.Drawing.Point(476, 214);
             this.testRB.Name = "testRB";
             this.testRB.Size = new System.Drawing.Size(97, 17);
             this.testRB.TabIndex = 7;
-            this.testRB.TabStop = true;
             this.testRB.Text = "Тестирование";
             this.testRB.UseVisualStyleBackColor = true;
             this.testRB.CheckedChanged += new System.EventHandler(this.testRB_CheckedChanged);
@@ -124,19 +128,49 @@
             // controllRB
             // 
             this.controllRB.AutoSize = true;
+            this.controllRB.Checked = true;
             this.controllRB.Location = new System.Drawing.Point(476, 237);
             this.controllRB.Name = "controllRB";
             this.controllRB.Size = new System.Drawing.Size(123, 17);
             this.controllRB.TabIndex = 8;
+            this.controllRB.TabStop = true;
             this.controllRB.Text = "Задача управления";
             this.controllRB.UseVisualStyleBackColor = true;
             this.controllRB.CheckedChanged += new System.EventHandler(this.controllRB_CheckedChanged);
+            // 
+            // ForChart
+            // 
+            chartArea2.AxisX.MajorGrid.Enabled = false;
+            chartArea2.AxisX.Maximum = 100D;
+            chartArea2.AxisX.Minimum = 0D;
+            chartArea2.AxisY.MajorGrid.Enabled = false;
+            chartArea2.AxisY.Minimum = 0D;
+            chartArea2.AxisY.ScaleBreakStyle.Spacing = 3D;
+            chartArea2.Name = "ChartArea";
+            this.ForChart.ChartAreas.Add(chartArea2);
+            legend2.Docking = System.Windows.Forms.DataVisualization.Charting.Docking.Bottom;
+            legend2.Name = "Legend1";
+            legend2.TitleAlignment = System.Drawing.StringAlignment.Far;
+            legend2.TitleSeparator = System.Windows.Forms.DataVisualization.Charting.LegendSeparatorStyle.Line;
+            this.ForChart.Legends.Add(legend2);
+            this.ForChart.Location = new System.Drawing.Point(31, 310);
+            this.ForChart.Name = "ForChart";
+            this.ForChart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.Bright;
+            series2.ChartArea = "ChartArea";
+            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+            series2.Legend = "Legend1";
+            series2.Name = "Data";
+            this.ForChart.Series.Add(series2);
+            this.ForChart.Size = new System.Drawing.Size(430, 283);
+            this.ForChart.TabIndex = 9;
+            this.ForChart.Text = "chart1";
             // 
             // Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(646, 331);
+            this.ClientSize = new System.Drawing.Size(644, 611);
+            this.Controls.Add(this.ForChart);
             this.Controls.Add(this.controllRB);
             this.Controls.Add(this.testRB);
             this.Controls.Add(this.ListSign);
@@ -148,6 +182,7 @@
             this.Name = "Form";
             this.Text = "Тестировщик нейроинтерфейсов";
             ((System.ComponentModel.ISupportInitialize)(this.Chart)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.ForChart)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -161,6 +196,7 @@
         private System.Windows.Forms.CheckedListBox ListSign;
         private System.Windows.Forms.RadioButton testRB;
         private System.Windows.Forms.RadioButton controllRB;
+        private System.Windows.Forms.DataVisualization.Charting.Chart ForChart;
     }
 }
 

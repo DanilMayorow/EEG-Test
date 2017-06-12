@@ -4,19 +4,25 @@ using System.Threading;
 using libStreamSDK;
 using System.Collections;
 using System.Collections.Generic;
+using AForge.Neuro;
+using AForge.Neuro.Learning;
+using System.Linq;
+using Common;
+using System.Diagnostics;
+using System.Windows.Forms.DataVisualization.Charting;
+using Accord.Statistics.Models.Regression.Linear;
 
 namespace EEG_Test
 {
 
     public partial class Form : System.Windows.Forms.Form
     {
-        LinearRegression LR;
         public int errCode = 0;
         private Thread mainThread;
         private Double[] dataAtt = new Double[100];
         private Double[] dataMed = new Double[100];
         public Int32[] signalVal = new Int32[10] { 2, 3, 5, 6, 7, 8, 9, 10, 11, 12 };
-        public List<Signal> Signals=new List<Signal>();
+        public List<Signal> Signals = new List<Signal>();
         public Boolean START = false;
         public Boolean INIT = false;
         public Boolean controllType = false;
@@ -25,18 +31,55 @@ namespace EEG_Test
         public Boolean A, M;
         public Boolean newData;
         public Double[][] Data;
-        public List<DataSignal> RegSig = new List<DataSignal>();
+        public Int32 readyFor = 0;
+        public Int32 sizeFor = 50;
+        public Boolean Forc = false;
 
         Boolean Run = true;
         DateTime Date;
         float Cm = 0, Ca = 0;
         public long Tick;
 
+        //AForge libary
+        BackPropagationLearning teachAtt,teachMed;
+        protected Int32[] Configuration = new Int32[] { 1, 5, 1 };
+        public ActivationNetwork network;
+        public Random rnd = new Random(2);
+        public int IterationsCount = 30000;
+        public double[][] LearningInputs;
+        public double[][] LearningAnswers;
+        public double[] LearningOutputs;
+
+
+        //Accord MLR
+        MultipleLinearRegression MLR;
+        Double [][] linearCoeff;
+
+        //Accord PR
+        public PolynomialRegression PR;
+        public Double [][] polynomCoeff;
+        public Int32 Grade = 3;
+
+        private Double[] linAtt = new Double[100];
+        private Double[] linMed = new Double[100];
+        private Double[] polyAtt = new Double[100];
+        private Double[] polyMed = new Double[100];
+        public Int32 Att = 0;
+        public Int32 Med = 1;
+
         public Form()
         {
             InitializeComponent();
             rbCheck();
             chartType();
+
+            
+            network = new ActivationNetwork(new Tanh(0.4),Configuration[0],Configuration.Skip(1).ToArray());
+            network.ForEachWeight(z => rnd.NextDouble() * 2 - 1);
+            teachAtt = new BackPropagationLearning(network);
+            teachAtt.LearningRate = 1;
+            teachMed = new BackPropagationLearning(network);
+            teachMed.LearningRate = 1;
         }
 
         private void getMindData()
@@ -132,7 +175,14 @@ namespace EEG_Test
                             bufAtt = (Double)NativeThinkgear.TG_GetValue(connectionID, NativeThinkgear.DataType.TG_DATA_ATTENTION);
                             Console.WriteLine("New ATT value#" + Ca + ": " + (int)bufAtt);
                             Ca++;
-                            A = true;
+                            if (bufAtt != 0)
+                            {
+                                A = true;
+                            }
+                            else
+                            {
+                                A = false;
+                            }
                         }
                         else
                         {
@@ -144,7 +194,14 @@ namespace EEG_Test
                             bufMed = (Double)NativeThinkgear.TG_GetValue(connectionID, NativeThinkgear.DataType.TG_DATA_MEDITATION);
                             Console.WriteLine("New MED value#" + Cm + ":  " + (int)bufMed);
                             Cm++;
-                            M = true;
+                            if (bufMed != 0)
+                            {
+                                M = true;
+                            }
+                            else
+                            {
+                                M = false;
+                            }
                         }
                         else
                         {
@@ -158,8 +215,11 @@ namespace EEG_Test
                             dataMed[dataMed.Length - 1] = bufMed;
                             Array.Copy(dataMed, 1, dataMed, 0, dataMed.Length - 1);
 
+                            readyFor++;
+                            if (readyFor == sizeFor) { toData();Forecast();Forc = true; }
                             if (Chart.IsHandleCreated)
                             {
+                                if (Forc) { toForc();}
                                 this.Invoke((MethodInvoker)delegate { UpdateChart(); });
                             }
                         }
@@ -185,11 +245,26 @@ namespace EEG_Test
             {
                 Chart.Series["Сосредоточенность"].Points.Clear();
                 Chart.Series["Расслабленность"].Points.Clear();
+                if(Forc)
+                {
+                    ForChart.Series["Р(ЛР)"].Points.Clear();
+                    ForChart.Series["Р(ПР)"].Points.Clear();
+                    ForChart.Series["С(ЛР)"].Points.Clear();
+                    ForChart.Series["С(ПР)"].Points.Clear();
+                }
 
                 for (int i = 0; i < dataAtt.Length - 1; ++i)
                 {
                     Chart.Series["Сосредоточенность"].Points.AddY(dataAtt[i]);
                     Chart.Series["Расслабленность"].Points.AddY(dataMed[i]);
+
+                    if (Forc)
+                    {
+                        ForChart.Series["С(ЛР)"].Points.AddY(linAtt[i]);
+                        ForChart.Series["С(ПР)"].Points.AddY(polyAtt[i]);
+                        ForChart.Series["Р(ЛР)"].Points.AddY(linMed[i]);
+                        ForChart.Series["Р(ПР)"].Points.AddY(polyMed[i]);
+                    }
                 }
             }
             else
@@ -229,7 +304,7 @@ namespace EEG_Test
             if (!START)
             {
                 Console.WriteLine((int)mainThread.ThreadState);
-                if (mainThread.ThreadState == (ThreadState)12) { mainThread.Start(); }
+                if (mainThread.ThreadState == (System.Threading.ThreadState)12) { mainThread.Start(); }
                 else {mainThread.Resume();}
                 timer.Start();
                 START = !START;
@@ -318,6 +393,7 @@ namespace EEG_Test
         public void chartType()
         {
             Chart.Series.Clear();
+            ForChart.Series.Clear();
             if (controllType)
             {
                 Chart.Series.Add("Сосредоточенность");
@@ -327,79 +403,199 @@ namespace EEG_Test
                 Chart.Series.Add("Расслабленность");
                 Chart.Series["Расслабленность"].Points.Clear();
                 Chart.Series["Расслабленность"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+
+                ForChart.Series.Add("Р(ЛР)");
+                ForChart.Series["Р(ЛР)"].Points.Clear();
+                ForChart.Series["Р(ЛР)"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+
+                ForChart.Series.Add("Р(ПР)");
+                ForChart.Series["Р(ПР)"].Points.Clear();
+                ForChart.Series["Р(ПР)"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+
+                ForChart.Series.Add("С(ЛР)");
+                ForChart.Series["С(ЛР)"].Points.Clear();
+                ForChart.Series["С(ЛР)"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+
+                ForChart.Series.Add("С(ПР)");
+                ForChart.Series["С(ПР)"].Points.Clear();
+                ForChart.Series["С(ПР)"].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
             }
         }
 
-        public void InitData()
+        protected virtual void PrepareData(Double [][] X,Double [][] Y)
         {
-            if (!controllType)
+            LearningInputs = X;
+            LearningAnswers = Y;
+        }
+
+        public void Learn()
+        {
+
+            int counter = 0;
+            while (true)
             {
-                Data = new Double[Signals.Count][];
-                for (int i = 0; i < 100; i++)
-                    Data[i] = new Double[100];
-            }
-            else
-            {
-                Data = new Double[2][];
-                for (int i = 0; i < 100; i++)
-                    Data[i] = new Double[100];
+                var watch = new Stopwatch();
+                watch.Start();
+                while (watch.ElapsedMilliseconds < 200)
+                {
+                    LearningIteration();
+                    AccountError();
+                    counter++;
+                    if (counter > IterationsCount) break;
+
+                }
+                watch.Stop();
+                LearningEnds();
+                if (counter > IterationsCount) break;
+
             }
         }
-        public void rewriteData()
+
+        protected virtual void LearningIteration()
         {
-            if (!controllType)
+            teachAtt.RunEpoch(LearningInputs, LearningAnswers);
+            teachMed.RunEpoch(LearningInputs, LearningAnswers);
+        }
+
+        protected virtual void AccountError()
+        {
+            //LearningErrors.Enqueue(GetError(LearningInputs, LearningAnswers));
+        }
+
+        protected virtual void LearningEnds()
+        {
+            LearningOutputs = LearningInputs.Select(z => network.Compute(z)[0]).ToArray();
+        }
+
+        protected double GetError(double[][] Inputs, double[][] Answers)
+        {
+            double sum = 0;
+            for (int i = 0; i < Inputs.Length; i++)
             {
-                for (int k = 0; k < Signals.Count; k++)
-                {
-                    for (int j = 0; j < 100; j++)
-                    {
-                        Data[k][j]=Signals[k].ChartElement(j);
-                    }
-                }
+                sum += Math.Abs(network.Compute(Inputs[i])[0] - Answers[i][0]);
             }
-            else
+            sum /= Inputs.Length;
+            return sum;
+        }
+
+        public void Forecast()
+        {
+            linearCoeff = new Double[2][];
+            linearCoeff[Att] = new Double[2];
+            linearCoeff[Med] = new Double[2];
+            polynomCoeff = new Double[2][];
+
+            var ols = new OrdinaryLeastSquares()
             {
-                for (int i=0;i<100; i++)
+                UseIntercept = true
+            };
+
+            var ls = new PolynomialLeastSquares()
+            {
+                Degree = Grade
+            };
+
+            Double[] outputs = new Double[sizeFor];
+            Double[][] inputs = new Double[sizeFor][];
+            Double[] _inputs = new Double[sizeFor];
+
+            for (int l = 0; l < sizeFor; l++)
+                outputs[l] = Data[Att][l];
+
+            for (int l = 0; l < sizeFor; l++)
+            {
+                inputs[l] = new Double[1];
+                inputs[l][0] = Data[Med][l];
+                _inputs[l]=Data[Med][l];
+            }
+
+            MLR = ols.Learn(inputs, outputs);
+            linearCoeff[Att][0] = MLR.Weights[0];
+            linearCoeff[Att][1] = MLR.Intercept;
+            PR = ls.Learn(_inputs, outputs);
+            polynomCoeff[Att] = PR.Coefficients;
+
+            for (int l = 0; l < sizeFor; l++)
+                outputs[l] = Data[Med][l];
+            for (int l = 0; l < sizeFor; l++)
+            {
+                inputs[l][0] = Data[Att][l];
+                _inputs[l] = Data[Att][l];
+            }
+            MLR = ols.Learn(inputs, outputs);
+            linearCoeff[Med][0] = MLR.Weights[0];
+            linearCoeff[Med][1] = MLR.Intercept;
+            PR = ls.Learn(_inputs, outputs);
+            polynomCoeff[Med] = PR.Coefficients;
+
+            for (int i = 0; i < 2; i++)
+            {
+                Console.Write("AttLinCoeff:");
+                for (int l = 0; l < linearCoeff[Att].Length; l++)
                 {
-                    Data[0][i] = dataAtt[i];
-                    Data[1][i] = dataMed[i];
+                    Console.Write(" " + linearCoeff[Att][l].ToString("F2"));
                 }
+                Console.Write("\nMedLinCoeff:");
+                for (int l = 0; l < linearCoeff[Med].Length; l++)
+                {
+                    Console.Write(" " + linearCoeff[Med][l].ToString("F2"));
+                }
+                Console.Write("\nAttPolyCoeff:");
+                for (int l = 0; l < polynomCoeff[Att].Length; l++)
+                {
+                    Console.Write(" " + polynomCoeff[Att][l].ToString("F2"));
+                }
+                Console.Write("\nMedPolyCoeff:");
+                for (int l = 0; l < polynomCoeff[Med].Length; l++)
+                {
+                    Console.Write(" " + polynomCoeff[Med][l].ToString("F2"));
+                }
+                Console.WriteLine("");
             }
         }
-        public void Regression()
+
+        public void toData()
         {
-            if (controllType)
+            Data = new Double[2][];
+            Data[Att] = new Double[sizeFor];
+            Data[Med] = new Double[sizeFor];
+            for (int j = 0; j < sizeFor; j++)
             {
-                DataSignal Sa = new DataSignal("Сосредоточенность");
-                DataSignal Sm = new DataSignal("Расслабленность");
-
-                Double[][] d = LinearRegression.Design(Data);
-                Sm.Factor=LinearRegression.Solve(d);
-
-                for(int i=0;i<100;i++)
-                {
-                    Double buf = Data[0][i];
-                    Data[0][i] = Data[1][i];
-                    Data[1][i] = buf;
-                }
-                d= LinearRegression.Design(Data);
-                Sa.Factor= LinearRegression.Solve(d);
-                RegSig.Add(Sa);
-                RegSig.Add(Sm);
+                Data[Att][j] = dataAtt[100-sizeFor+j];
+                Data[Med][j] = dataMed[100-sizeFor+j];
             }
-            else
+        }
+
+        public void toForc()
+        {
+            Double Ax = linearCoeff[Att][0] * bufMed;
+            Double b = linearCoeff[Att][1];
+            linAtt[linAtt.Length - 1] =  Ax+b;
+            Array.Copy(linAtt, 1, linAtt, 0, linAtt.Length - 1);
+
+            polyAtt[polyAtt.Length - 1] = culcPoly(Att, bufMed);
+            Array.Copy(polyAtt, 1, polyAtt, 0, polyAtt.Length - 1);
+
+            Ax = linearCoeff[Med][0] * bufAtt;
+            b = linearCoeff[Med][1];
+            linMed[linMed.Length - 1] = Ax + b;
+            Array.Copy(linMed, 1, linMed, 0, linMed.Length - 1);
+
+            polyMed[polyMed.Length - 1] = culcPoly(Med,bufAtt);
+            Array.Copy(polyMed, 1, polyMed, 0, polyMed.Length - 1);
+        }
+
+        public Double culcPoly(Int32 ind, Double val)
+        {
+            Double sum=0;
+            for (int i=0;i<Grade;i++)
             {
-                DataSignal[] S = new DataSignal[Signals.Count];
-                for (int i = 0; i < Signals.Count;i++)
-                    S[i].Name = Signals[i].Name;
-                
-
-                for (int i = 0; i < Signals.Count; i++)
-                    RegSig.Add(S[i]);
+                sum += polynomCoeff[ind][i] * Math.Pow(val, Grade - i);
             }
+            if (sum > 100) { sum = 100; }
+            return sum;
         }
     }
-
     public class Signal
     {
         public Signal()
@@ -444,33 +640,4 @@ namespace EEG_Test
         public Double[] Chart = new Double[100];
     };
 
-    public class DataSignal
-    {
-        public DataSignal() { }
-        public DataSignal(String _name)
-        {
-            name = _name;
-        }
-        public DataSignal(String _name, Double[] _factor)
-        {
-            name = _name;
-            factor = _factor;
-        }
-        private String name;
-        public String Name
-        {
-            get { return name; }
-            set { name = value; }
-        }
-        private Double[] factor;
-        public Double[] Factor
-        {
-            get { return factor; }
-            set { factor = new Double[value.Length]; factor = value; }
-        }
-        public Double Forecast(Double [] x)
-        {
-            return LinearRegression.Forecast(x, factor);
-        }
-    }
 }
