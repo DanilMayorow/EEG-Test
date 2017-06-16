@@ -29,4 +29,27 @@ namespace EEG_Test
             return Beta * (1 - y * y);
         }
     }
+
+    public class Sigm
+    {
+        public Double Alpha;
+
+        public Sigm(double Alpha = 1) { this.Alpha = Alpha; }
+
+        public double Function(double x)
+        {
+            return 1 / (1 + Math.Exp(-x*Alpha));
+        }
+
+        public double Derivative(double x)
+        {
+            double s = Function(x);
+            return s * (1 - s);
+        }
+
+        public double Derivative2(double y)
+        {
+            return y * (1 - y);
+        }
+    }
 }

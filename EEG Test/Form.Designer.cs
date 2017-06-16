@@ -42,16 +42,20 @@
             this.testRB = new System.Windows.Forms.RadioButton();
             this.controllRB = new System.Windows.Forms.RadioButton();
             this.ForChart = new System.Windows.Forms.DataVisualization.Charting.Chart();
+            this.table = new System.Windows.Forms.TableLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this.Chart)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.ForChart)).BeginInit();
             this.SuspendLayout();
             // 
             // Chart
             // 
+            chartArea1.AxisX.Interval = 20D;
             chartArea1.AxisX.MajorGrid.Enabled = false;
             chartArea1.AxisX.Maximum = 100D;
             chartArea1.AxisX.Minimum = 0D;
+            chartArea1.AxisY.Interval = 20D;
             chartArea1.AxisY.MajorGrid.Enabled = false;
+            chartArea1.AxisY.Maximum = 100D;
             chartArea1.AxisY.Minimum = 0D;
             chartArea1.AxisY.ScaleBreakStyle.Spacing = 3D;
             chartArea1.Name = "ChartArea";
@@ -61,21 +65,26 @@
             legend1.TitleAlignment = System.Drawing.StringAlignment.Far;
             legend1.TitleSeparator = System.Windows.Forms.DataVisualization.Charting.LegendSeparatorStyle.Line;
             this.Chart.Legends.Add(legend1);
-            this.Chart.Location = new System.Drawing.Point(31, 21);
+            this.Chart.Location = new System.Drawing.Point(30, 12);
             this.Chart.Name = "Chart";
-            this.Chart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.SemiTransparent;
+            this.Chart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.None;
+            this.Chart.PaletteCustomColors = new System.Drawing.Color[] {
+        System.Drawing.Color.Black};
             series1.ChartArea = "ChartArea";
-            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+            series1.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
             series1.Legend = "Legend1";
+            series1.MarkerBorderWidth = 2;
+            series1.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
             series1.Name = "Data";
+            series1.YValuesPerPoint = 6;
             this.Chart.Series.Add(series1);
-            this.Chart.Size = new System.Drawing.Size(430, 283);
+            this.Chart.Size = new System.Drawing.Size(300, 300);
             this.Chart.TabIndex = 0;
             this.Chart.Text = "Chart";
             // 
             // ButStart
             // 
-            this.ButStart.Location = new System.Drawing.Point(476, 260);
+            this.ButStart.Location = new System.Drawing.Point(642, 36);
             this.ButStart.Name = "ButStart";
             this.ButStart.Size = new System.Drawing.Size(92, 23);
             this.ButStart.TabIndex = 1;
@@ -87,7 +96,7 @@
             // 
             this.TimeLable.AutoSize = true;
             this.TimeLable.Font = new System.Drawing.Font("Microsoft Sans Serif", 11F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.TimeLable.Location = new System.Drawing.Point(473, 21);
+            this.TimeLable.Location = new System.Drawing.Point(642, 15);
             this.TimeLable.Name = "TimeLable";
             this.TimeLable.Size = new System.Drawing.Size(95, 18);
             this.TimeLable.TabIndex = 2;
@@ -107,7 +116,7 @@
             "Низкие Бета-Волны",
             "Гамма-Волны",
             "Средние Гамма-Волны"});
-            this.ListSign.Location = new System.Drawing.Point(476, 54);
+            this.ListSign.Location = new System.Drawing.Point(642, 112);
             this.ListSign.Name = "ListSign";
             this.ListSign.Size = new System.Drawing.Size(149, 154);
             this.ListSign.TabIndex = 5;
@@ -117,7 +126,7 @@
             // 
             this.testRB.AutoSize = true;
             this.testRB.Enabled = false;
-            this.testRB.Location = new System.Drawing.Point(476, 214);
+            this.testRB.Location = new System.Drawing.Point(642, 89);
             this.testRB.Name = "testRB";
             this.testRB.Size = new System.Drawing.Size(97, 17);
             this.testRB.TabIndex = 7;
@@ -129,7 +138,7 @@
             // 
             this.controllRB.AutoSize = true;
             this.controllRB.Checked = true;
-            this.controllRB.Location = new System.Drawing.Point(476, 237);
+            this.controllRB.Location = new System.Drawing.Point(642, 66);
             this.controllRB.Name = "controllRB";
             this.controllRB.Size = new System.Drawing.Size(123, 17);
             this.controllRB.TabIndex = 8;
@@ -140,10 +149,13 @@
             // 
             // ForChart
             // 
+            chartArea2.AxisX.Interval = 20D;
             chartArea2.AxisX.MajorGrid.Enabled = false;
             chartArea2.AxisX.Maximum = 100D;
             chartArea2.AxisX.Minimum = 0D;
+            chartArea2.AxisY.Interval = 20D;
             chartArea2.AxisY.MajorGrid.Enabled = false;
+            chartArea2.AxisY.Maximum = 100D;
             chartArea2.AxisY.Minimum = 0D;
             chartArea2.AxisY.ScaleBreakStyle.Spacing = 3D;
             chartArea2.Name = "ChartArea";
@@ -153,23 +165,46 @@
             legend2.TitleAlignment = System.Drawing.StringAlignment.Far;
             legend2.TitleSeparator = System.Windows.Forms.DataVisualization.Charting.LegendSeparatorStyle.Line;
             this.ForChart.Legends.Add(legend2);
-            this.ForChart.Location = new System.Drawing.Point(31, 310);
+            this.ForChart.Location = new System.Drawing.Point(336, 12);
             this.ForChart.Name = "ForChart";
-            this.ForChart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.Bright;
+            this.ForChart.Palette = System.Windows.Forms.DataVisualization.Charting.ChartColorPalette.None;
+            this.ForChart.PaletteCustomColors = new System.Drawing.Color[] {
+        System.Drawing.Color.Red,
+        System.Drawing.Color.Yellow,
+        System.Drawing.Color.Indigo,
+        System.Drawing.Color.Blue,
+        System.Drawing.Color.Aqua,
+        System.Drawing.Color.Green};
             series2.ChartArea = "ChartArea";
-            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Spline;
+            series2.ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Point;
             series2.Legend = "Legend1";
+            series2.MarkerBorderWidth = 2;
+            series2.MarkerStyle = System.Windows.Forms.DataVisualization.Charting.MarkerStyle.Circle;
             series2.Name = "Data";
             this.ForChart.Series.Add(series2);
-            this.ForChart.Size = new System.Drawing.Size(430, 283);
+            this.ForChart.Size = new System.Drawing.Size(300, 300);
             this.ForChart.TabIndex = 9;
             this.ForChart.Text = "chart1";
+            // 
+            // table
+            // 
+            this.table.ColumnCount = 3;
+            this.table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+            this.table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+            this.table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F));
+            this.table.Location = new System.Drawing.Point(30, 318);
+            this.table.Name = "table";
+            this.table.RowCount = 1;
+            this.table.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.table.Size = new System.Drawing.Size(900, 300);
+            this.table.TabIndex = 10;
             // 
             // Form
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(644, 611);
+            this.ClientSize = new System.Drawing.Size(949, 641);
+            this.Controls.Add(this.table);
             this.Controls.Add(this.ForChart);
             this.Controls.Add(this.controllRB);
             this.Controls.Add(this.testRB);
@@ -180,6 +215,7 @@
             this.Cursor = System.Windows.Forms.Cursors.Cross;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Тестировщик нейроинтерфейсов";
             ((System.ComponentModel.ISupportInitialize)(this.Chart)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.ForChart)).EndInit();
@@ -197,6 +233,7 @@
         private System.Windows.Forms.RadioButton testRB;
         private System.Windows.Forms.RadioButton controllRB;
         private System.Windows.Forms.DataVisualization.Charting.Chart ForChart;
+        private System.Windows.Forms.TableLayoutPanel table;
     }
 }
 
